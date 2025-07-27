@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import view_masks as vm
 import dominant_colors_hsv as dch
+import hist_simil_coss as simcoss
 
 def dissimilaridade_cos(hist1, hist2):
     hist1 = hist1.flatten()
@@ -36,10 +37,37 @@ def analisar_e_plotar_comparacao(img_base_path, img_comp_path, threshold=0.6, mo
     mask_comp = cv2.bitwise_or(cv2.inRange(hsv_comp, lower_red1, upper_red1), cv2.inRange(hsv_comp, lower_red2, upper_red2))
 
     # Histogramas com máscara
-    # hist_base = cv2.calcHist([hsv_base], [0], mask_base, [180], [0, 180])
-    # hist_comp = cv2.calcHist([hsv_comp], [0], mask_comp, [180], [0, 180])
-    hist_base = cv2.calcHist([hsv_base], [0], None, [180], [0, 180])
-    hist_comp = cv2.calcHist([hsv_comp], [0], None, [180], [0, 180])
+    # hist_base = cv2.calcHist([hsv_base], [0], mask_base, [180], [160, 180])
+    # hist_comp = cv2.calcHist([hsv_comp], [0], mask_comp, [180], [160, 180])
+    
+    
+    #Calcula os histogramas apenas de 0-20 e 160-180 
+    hist_base1 = cv2.calcHist([hsv_base], [0], mask_base, [20], [160, 180])
+    hist_comp1 = cv2.calcHist([hsv_comp], [0], mask_comp, [20], [160, 180])
+    
+    hist_base2 = cv2.calcHist([hsv_base], [0], mask_base, [20], [0, 20])
+    hist_comp2 = cv2.calcHist([hsv_comp], [0], mask_comp, [20], [0, 20])
+    
+    
+    #Teste com 15 bins (Se saiu pior que o 20)
+    # hist_base1 = cv2.calcHist([hsv_base], [0], mask_base, [15], [165, 180])
+    # hist_comp1 = cv2.calcHist([hsv_comp], [0], mask_comp, [15], [165, 180])
+    
+    # hist_base2 = cv2.calcHist([hsv_base], [0], mask_base, [15], [0, 15])
+    # hist_comp2 = cv2.calcHist([hsv_comp], [0], mask_comp, [15], [0, 15])
+    
+    #Teste com 30 bins (resultados parecidos com o 20)
+    # hist_base1 = cv2.calcHist([hsv_base], [0], mask_base, [30], [150, 180])
+    # hist_comp1 = cv2.calcHist([hsv_comp], [0], mask_comp, [30], [150, 180])
+    
+    # hist_base2 = cv2.calcHist([hsv_base], [0], mask_base, [30], [0, 30])
+    # hist_comp2 = cv2.calcHist([hsv_comp], [0], mask_comp, [30], [0, 30])
+    
+    
+    
+    hist_base = hist_base1 + hist_base2
+    hist_comp = hist_comp1 + hist_comp2
+
 
     cv2.normalize(hist_base, hist_base, 0, 1, cv2.NORM_MINMAX)
     cv2.normalize(hist_comp, hist_comp, 0, 1, cv2.NORM_MINMAX)
@@ -49,14 +77,14 @@ def analisar_e_plotar_comparacao(img_base_path, img_comp_path, threshold=0.6, mo
         interacao = score < threshold
         tipo = "Correlação"
         resultado = f"Score de Correlação: {score:.4f}"
-        output_dir = "comparacoes_salvas_correl"
+        output_dir = "comp_salvas_correl"
         comparador = f"O score < {threshold}? {'Sim' if interacao else 'Não'}"
     else:
-        score = dissimilaridade_cos(hist_base, hist_comp)
+        score = simcoss.dissimilaridade_cos(hist_base, hist_comp)
         interacao = score > threshold
         tipo = "Dissimilaridade Cosseno"
         resultado = f"Score de Dissimilaridade: {score:.4f}"
-        output_dir = "comparacoes_salvas_coss"
+        output_dir = "comp_salvas_coss"
         comparador = f"O score > {threshold}? {'Sim' if interacao else 'Não'}"
 
     print(f"Analisando '{img_base_path}' vs '{img_comp_path}'...")
@@ -114,14 +142,14 @@ def menu():
                 threshold = 0.6
             elif metodo == '2':
                 modo = "cosseno"
-                threshold = 0.6
+                threshold = 0.3
             else:
                 print("Método inválido. Voltando ao menu.")
                 continue
 
             caminhos_teste = [
                 "colcheia/interacao.png",
-                "colcheia/teste1.png",
+                "colcheia/base.png",
                 "colcheia/teste2.png",
                 "colcheia/teste3.png",
                 "colcheia/teste4.png"
